@@ -21,11 +21,25 @@ def main():
     while response:
         for item in response['items']:
             comment = item['snippet']['topLevelComment']['snippet']['textOriginal']
-            if item['snippet']['totalReplyCount'] > 0:
-                sub_comments = item['replies']['comments']
-                for sub_item in sub_comments:
-                    comments.append(sub_item['snippet']['textOriginal'])
             comments.append(comment)
+            if item['snippet']['totalReplyCount'] > 0:
+                r = youtube.comments().list(
+                    part="snippet",
+                    parentId=item['id']
+                )
+                rr = r.execute()
+                while rr:
+                    for i in rr['items']:
+                        sub_comment = i['snippet']['textOriginal']
+                        comments.append(sub_comment)
+                    if 'nextPageToken' in rr:
+                        rr = youtube.comments().list(
+                                part="snippet",
+                                pageToken=rr['nextPageToken'],
+                                parentId=item['id']
+                        ).execute()
+                    else:
+                        break
 
         if 'nextPageToken' in response:
             response = youtube.commentThreads().list(
